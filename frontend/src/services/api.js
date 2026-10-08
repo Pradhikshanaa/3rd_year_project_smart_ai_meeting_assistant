@@ -2,13 +2,16 @@ import axios from 'axios';
 
 // Smart API Base URL resolver:
 // 1. Explicit VITE_API_URL environment variable if set
-// 2. If running on Vite dev server (e.g. localhost:5173), route to http://127.0.0.1:5000/api
-// 3. If running on a unified port / ngrok tunnel (port 5000 or default 80/443), route to window.location.origin/api
+// 2. If running on local development (localhost / 127.0.0.1), use /api (Vite proxy)
+// 3. Fallback to production Render backend URL
 const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  return '/api';
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return '/api';
+  }
+  return 'https://threerd-year-project-smart-ai-meeting.onrender.com/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();

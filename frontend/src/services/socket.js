@@ -7,7 +7,10 @@ const getSocketUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
   }
-  return window.location.origin;
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return window.location.origin;
+  }
+  return 'https://threerd-year-project-smart-ai-meeting.onrender.com';
 };
 
 export const getSocket = (user) => {
