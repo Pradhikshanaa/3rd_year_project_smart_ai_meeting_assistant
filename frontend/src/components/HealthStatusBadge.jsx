@@ -4,31 +4,65 @@ import { Activity, CheckCircle, AlertCircle } from 'lucide-react';
 
 const HealthStatusBadge = () => {
   const [health, setHealth] = useState({ status: 'checking', dbStatus: 'unknown' });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchHealth = async () => {
+    setIsRefreshing(true);
     try {
       const res = await systemService.checkHealth();
       setHealth({
-        status: res.status,
+        status: res.status || 'online',
         dbStatus: res.database?.status || 'unknown',
         dbError: res.database?.error
       });
     } catch (err) {
-      setHealth({ status: 'offline', dbStatus: 'disconnected', error: err.message });
+      // If the cloud server is spinning up or offline
+      setHealth({
+        status: 'offline',
+        dbStatus: 'disconnected',
+        error: err.message
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchHealth();
-    const interval = setInterval(fetchHealth, 15000);
+    // Fast retry (5s) if server is offline (Render waking up), normal poll (15s) when online
+    const intervalTime = health.status === 'offline' ? 5000 : 15000;
+    const interval = setInterval(fetchHealth, intervalTime);
     return () => clearInterval(interval);
-  }, []);
+  }, [health.status]);
 
   const isHealthy = health.status === 'online' && health.dbStatus === 'connected';
+  const isWakingUp = health.status === 'offline' || health.status === 'checking';
+
+  let badgeText = 'System Online (Database Connected)';
+  let badgeBg = '#ecfdf5';
+  let badgeColor = '#065f46';
+  let badgeBorder = '#a7f3d0';
+
+  if (isHealthy) {
+    badgeText = 'System Online (Database Connected)';
+    badgeBg = '#ecfdf5';
+    badgeColor = '#065f46';
+    badgeBorder = '#a7f3d0';
+  } else if (isWakingUp) {
+    badgeText = isRefreshing ? 'Connecting to Cloud Backend...' : 'Waking Up Cloud Server... (Click to Retry)';
+    badgeBg = '#fffbeb';
+    badgeColor = '#92400e';
+    badgeBorder = '#fde68a';
+  } else if (health.status === 'online' && health.dbStatus !== 'connected') {
+    badgeText = 'API Online (Database Disconnected)';
+    badgeBg = '#fef2f2';
+    badgeColor = '#991b1b';
+    badgeBorder = '#fecaca';
+  }
 
   return (
     <div
-      title={health.dbError ? `Database Error: ${health.dbError}` : `API: ${health.status}, DB: ${health.dbStatus}`}
+      title={health.dbError ? `Database Error: ${health.dbError}` : `API: ${health.status}, DB: ${health.dbStatus} (Click to refresh)`}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -37,21 +71,23 @@ const HealthStatusBadge = () => {
         borderRadius: '20px',
         fontSize: '0.74rem',
         fontWeight: 600,
-        backgroundColor: isHealthy ? '#ecfdf5' : health.status === 'online' ? '#fffbeb' : '#fef2f2',
-        color: isHealthy ? '#065f46' : health.status === 'online' ? '#92400e' : '#991b1b',
-        border: `1px solid ${isHealthy ? '#a7f3d0' : health.status === 'online' ? '#fde68a' : '#fecaca'}`,
-        cursor: 'pointer'
+        backgroundColor: badgeBg,
+        color: badgeColor,
+        border: `1px solid ${badgeBorder}`,
+        cursor: 'pointer',
+        userSelect: 'none',
+        transition: 'all 0.2s ease'
       }}
       onClick={fetchHealth}
     >
       {isHealthy ? (
         <CheckCircle size={13} color="#10b981" />
-      ) : health.status === 'online' ? (
-        <Activity size={13} color="#f59e0b" />
+      ) : isWakingUp ? (
+        <Activity size={13} color="#f59e0b" style={{ animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }} />
       ) : (
         <AlertCircle size={13} color="#ef4444" />
       )}
-      <span>{isHealthy ? 'System Online (Database Connected)' : health.status === 'online' ? 'API Online (Database Disconnected)' : 'API Offline'}</span>
+      <span>{badgeText}</span>
     </div>
   );
 };

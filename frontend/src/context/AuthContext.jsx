@@ -36,7 +36,9 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (err) {
         console.warn("Failed to restore session token:", err.message);
-        if (isMounted) logout();
+        if (isMounted && err.response && err.response.status === 401) {
+          logout();
+        }
       } finally {
         if (isMounted) setLoading(false);
       }

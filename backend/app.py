@@ -62,6 +62,18 @@ def create_app(config_class=Config):
     from services.scheduler_service import init_scheduler
     init_scheduler(app)
 
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        if exception:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+        try:
+            db.session.remove()
+        except Exception:
+            pass
+
     # Active in-memory room tracking: { meeting_id: { socket_id: { user_id, user_name, socket_id } } }
     active_meeting_rooms = {}
 

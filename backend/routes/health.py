@@ -11,9 +11,19 @@ def health_check():
     db_error = None
     try:
         db.session.execute(text('SELECT 1'))
+        db.session.commit()
     except Exception as e:
+        db.session.rollback()
         db_status = "disconnected"
         db_error = str(e)
+    finally:
+        db.session.remove()
+        
+    db_engine = "unknown"
+    try:
+        db_engine = db.engine.name
+    except Exception:
+        pass
         
     return jsonify({
         'status': 'online',
@@ -21,6 +31,7 @@ def health_check():
         'timestamp': datetime.utcnow().isoformat(),
         'database': {
             'status': db_status,
+            'engine': db_engine,
             'error': db_error
         },
         'socketio_async_mode': getattr(socketio, 'async_mode', 'threading')
