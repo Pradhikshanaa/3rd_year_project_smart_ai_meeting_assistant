@@ -5,13 +5,28 @@ import axios from 'axios';
 // 2. If running on local development (localhost / 127.0.0.1), use /api (Vite proxy)
 // 3. Fallback to production Render backend URL
 const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  const isLocalHost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.startsWith('192.168.') ||
+    window.location.hostname.startsWith('10.')
+  );
+
+  const envUrl = import.meta.env.VITE_API_URL;
+
+  // When running on Vercel or any cloud domain, NEVER use localhost or http://127.0.0.1
+  if (!isLocalHost) {
+    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+      return envUrl;
+    }
+    return 'https://threerd-year-project-smart-ai-meeting.onrender.com/api';
   }
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return '/api';
+
+  // Local development
+  if (envUrl) {
+    return envUrl;
   }
-  return 'https://threerd-year-project-smart-ai-meeting.onrender.com/api';
+  return '/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();

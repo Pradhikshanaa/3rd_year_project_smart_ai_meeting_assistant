@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import { meetingService } from '../services/api';
+import { getSocketUrl } from '../services/socket';
 import { 
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, 
   Users, Clock, Shield, AlertCircle, Sparkles, CheckCircle2, ChevronRight, X,
@@ -656,14 +657,6 @@ const MeetingRoom = () => {
         initSpeechRecognizer();
 
         // Step D: Connect to Socket.IO Signaling Server ONLY after local media stream is fully resolved
-        const getSocketUrl = () => {
-          if (import.meta.env.VITE_SOCKET_URL) return import.meta.env.VITE_SOCKET_URL;
-          if (import.meta.env.VITE_API_URL) {
-            return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
-          }
-          return window.location.origin;
-        };
-
         const socketUrl = getSocketUrl();
         console.log(`[WebRTC] Local media ready. Connecting to Socket.IO signaling server at ${socketUrl}...`);
         const socket = io(socketUrl, {
