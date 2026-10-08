@@ -12,7 +12,15 @@ const getApiBaseUrl = () => {
     window.location.hostname.startsWith('10.')
   );
 
-  const envUrl = import.meta.env.VITE_API_URL;
+  let envUrl = import.meta.env.VITE_API_URL;
+
+  // If set, automatically ensure it ends with /api
+  if (envUrl) {
+    envUrl = envUrl.trim().replace(/\/+$/, '');
+    if (!envUrl.endsWith('/api')) {
+      envUrl = `${envUrl}/api`;
+    }
+  }
 
   // When running on Vercel or any cloud domain, NEVER use localhost or http://127.0.0.1
   if (!isLocalHost) {

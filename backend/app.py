@@ -39,6 +39,7 @@ def create_app(config_class=Config):
     from routes.admin import admin_bp
 
     app.register_blueprint(health_bp, url_prefix='/api')
+    app.register_blueprint(health_bp, name='health_root', url_prefix='')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(teams_bp, url_prefix='/api/teams')
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
